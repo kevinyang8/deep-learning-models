@@ -26,6 +26,8 @@ def get_base_model(model_name, weights_path, weight_decay=1e-4):
         base_model = awsdet.models.backbones.ResNet50V2(weights=None, include_top=False, weight_decay=weight_decay)
     elif model_name == "ResNet101V1":
         base_model = awsdet.models.backbones.ResNet101(weights=None, include_top=False, weight_decay=weight_decay)
+    elif model_name == 'ResNeXt50':
+        base_model = awsdet.models.backbones.ResNeXt50(weights=None, include_top=False, weight_decay=weight_decay)
     elif model_name == 'Xception':
         base_model = Xception(weights=weights_path, include_top=False)
     elif model_name == 'InceptionV3':
@@ -37,7 +39,7 @@ def get_base_model(model_name, weights_path, weight_decay=1e-4):
         base_model = MobileNet(weights=weights_path, include_top=False)
     else:
         raise ValueError(
-            'Valid base model values are: "VGG16","VGG19","ResNet50V1", "ResNet50V2", "ResNet101V1, "Xception", \
+            'Valid base model values are: "VGG16","VGG19","ResNet50V1", "ResNet50V2", "ResNet101V1, "ResNeXt50", "Xception", \
                             "InceptionV3","InceptionResNetV2","MobileNet".'
         )
     return base_model
@@ -45,7 +47,7 @@ def get_base_model(model_name, weights_path, weight_decay=1e-4):
 
 
 def get_outputs(model):
-    if model.name in ['resnet50', 'resnet50v2']:
+    if model.name in ['resnet50', 'resnet50v2', 'resnext50']:
         return [model.get_layer(l).output for l in ['conv2_block3_out',
             'conv3_block4_out', 'conv4_block6_out', 'conv5_block3_out']]
     elif model.name == 'resnet101':
@@ -56,7 +58,7 @@ def get_outputs(model):
 
 if __name__ == "__main__":
     
-    m = get_base_model("ResNet101V1", "/workspace/shared_workspace/models/vision/detection/weights/resnet101_weights_tf_dim_ordering_tf_kernels_notop.h5")
+    m = get_base_model("ResNeXt50", "/deep-learning-models/models/vision/detection/weights/resnext50_weights_tf_dim_ordering_tf_kernels_notop.h5")
     print("Input:", m.input)
     print("Outputs:")
     for idx, l in enumerate(m.layers):

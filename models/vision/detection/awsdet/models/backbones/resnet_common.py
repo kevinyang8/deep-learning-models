@@ -194,7 +194,7 @@ def stack2(x, filters, blocks, stride1=2, name=None, trainable=True, weight_deca
 
 
 def block3(x, filters, kernel_size=3, stride=1, groups=32,
-           conv_shortcut=True, name=None):
+           conv_shortcut=True, name=None, trainable=True, weight_decay=0.0001):
     """A residual block.
 
     # Arguments
@@ -220,7 +220,8 @@ def block3(x, filters, kernel_size=3, stride=1, groups=32,
     else:
         shortcut = x
 
-    x = layers.Conv2D(filters, 1, use_bias=False, name=name + '_1_conv')(x)
+    x = layers.Conv2D(filters, 1, use_bias=False, name=name + '_1_conv', trainable=trainable, 
+                        kernel_regularizer=tf.keras.regularizers.l2(weight_decay))(x)
     x = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5,
                                   name=name + '_1_bn', trainable=False)(x)
     x = layers.Activation('relu', name=name + '_1_relu')(x)
@@ -228,7 +229,8 @@ def block3(x, filters, kernel_size=3, stride=1, groups=32,
     c = filters // groups
     x = layers.ZeroPadding2D(padding=((1, 1), (1, 1)), name=name + '_2_pad')(x)
     x = layers.DepthwiseConv2D(kernel_size, strides=stride, depth_multiplier=c,
-                               use_bias=False, name=name + '_2_conv')(x)
+                               use_bias=False, name=name + '_2_conv', trainable=trainable, 
+                               kernel_regularizer=tf.keras.regularizers.l2(weight_decay))(x)
     kernel = np.zeros((1, 1, filters * c, filters), dtype=np.float32)
     for i in range(filters):
         start = (i // c) * c * c + i % c
@@ -243,7 +245,8 @@ def block3(x, filters, kernel_size=3, stride=1, groups=32,
     x = layers.Activation('relu', name=name + '_2_relu')(x)
 
     x = layers.Conv2D((64 // groups) * filters, 1,
-                      use_bias=False, name=name + '_3_conv')(x)
+                      use_bias=False, name=name + '_3_conv', trainable=trainable, 
+                      kernel_regularizer=tf.keras.regularizers.l2(weight_decay))(x)
     x = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5,
                                   name=name + '_3_bn', trainable=False)(x)
 
@@ -252,7 +255,7 @@ def block3(x, filters, kernel_size=3, stride=1, groups=32,
     return x
 
 
-def stack3(x, filters, blocks, stride1=2, groups=32, name=None):
+def stack3(x, filters, blocks, stride1=2, groups=32, name=None, trainable=True, weight_decay=0.0001):
     """A set of stacked residual blocks.
 
     # Arguments
@@ -266,10 +269,10 @@ def stack3(x, filters, blocks, stride1=2, groups=32, name=None):
     # Returns
         Output tensor for the stacked blocks.
     """
-    x = block3(x, filters, stride=stride1, groups=groups, name=name + '_block1')
+    x = block3(x, filters, stride=stride1, groups=groups, name=name + '_block1', trainable=trainable, weight_decay=weight_decay)
     for i in range(2, blocks + 1):
         x = block3(x, filters, groups=groups, conv_shortcut=False,
-                   name=name + '_block' + str(i))
+                   name=name + '_block' + str(i), trainable=trainable, weight_decay=weight_decay)
     return x
 
 
@@ -552,12 +555,13 @@ def ResNeXt50(include_top=True,
               input_shape=None,
               pooling=None,
               classes=1000,
+              weight_decay=0.0001,
               **kwargs):
     def stack_fn(x):
-        x = stack3(x, 128, 3, stride1=1, name='conv2')
-        x = stack3(x, 256, 4, name='conv3')
-        x = stack3(x, 512, 6, name='conv4')
-        x = stack3(x, 1024, 3, name='conv5')
+        x = stack3(x, 128, 3, stride1=1, name='conv2', trainable=False, weight_decay=weight_decay)
+        x = stack3(x, 256, 4, name='conv3', weight_decay=weight_decay)
+        x = stack3(x, 512, 6, name='conv4', weight_decay=weight_decay)
+        x = stack3(x, 1024, 3, name='conv5', weight_decay=weight_decay)
         return x
     return ResNet(stack_fn, False, False, 'resnext50',
                   include_top, weights,
