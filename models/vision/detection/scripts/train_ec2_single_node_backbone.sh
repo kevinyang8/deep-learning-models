@@ -15,6 +15,6 @@ mpirun -np 8 \
 python tools/train_backbone.py \
 --train_data_dir /deep-learning-models/models/vision/detection/data/imagenet/train \
 --validation_data_dir /deep-learning-models/models/vision/detection/data/imagenet/validation \
---batch_size 256 
+--batch_size 128 \
 
 

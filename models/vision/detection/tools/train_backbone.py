@@ -3,8 +3,6 @@ import tensorflow as tf
 import horovod.tensorflow.keras as hvd
 import argparse
 
-from awsdet.utils.runner import init_dist
-
 @tf.function
 def parse(record):
     features = {'image/encoded': tf.io.FixedLenFeature((), tf.string),
@@ -51,7 +49,12 @@ def create_dataset(data_dir, batch_size):
     return data
 
 def main():
-    init_dist()
+    hvd.init()
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+    if gpus:
+        tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
     os.environ['TF_CUDNN_DETERMINISTIC'] = '1'
 
     cmdline = add_cli_args()
@@ -70,14 +73,16 @@ def main():
     opt = tf.keras.optimizers.SGD(learning_rate=FLAGS.learning_rate * hvd.size(), momentum=FLAGS.momentum)
     if not FLAGS.fp32:
        #opt = tf.keras.mixed_precision.experimental.LossScaleOptimizer(opt, loss_scale="dynamic")
-       opt = tf.train.experimental.enable_mixed_precision_graph_rewrite(opt, loss_scale='dynamic')
+        opt = tf.train.experimental.enable_mixed_precision_graph_rewrite(opt, loss_scale='dynamic')
     opt = hvd.DistributedOptimizer(opt)
 
     loss_func = tf.keras.losses.SparseCategoricalCrossentropy()
 
     callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]
+
     if hvd.rank() == 0:
-        callbacks.append(tf.keras.callbacks.ModelCheckpoint('./work_dir/resnet50_checkpoints/checkpoint-{epoch}.h5'))
+        callbacks.append(tf.keras.callbacks.ModelCheckpoint('./checkpoint-{epoch}.h5'))
+        callbacks.append(tf.keras.callbacks.CSVLogger('log.csv', append=True, separator=';'))
 
     model.compile(
         loss=loss_func,
@@ -86,7 +91,7 @@ def main():
         experimental_run_tf_function=False
     )
 
-    validation_data = create_dataset(FLAGS.validation_data_dir, FLAGS.batch_size)
+    validation_data = create_dataset(FLAGS.validation_data_dir, 1)
     
     model.fit(
         data,
