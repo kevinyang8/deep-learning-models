@@ -1,6 +1,6 @@
 import os
 import tensorflow as tf
-import horovod.tensorflow as hvd
+import horovod.tensorflow.keras as hvd
 import argparse
 
 from awsdet.utils.runner import init_dist
@@ -61,7 +61,7 @@ def main():
     if not FLAGS.fp32:
         tf.config.optimizer.set_experimental_options({"auto_mixed_precision": True})
 
-    data = create_dataset(FLAGS.data_dir, FLAGS.batch_size)
+    data = create_dataset(FLAGS.train_data_dir, FLAGS.batch_size)
     # add code to support many different models, resnet is temporary
     # also make sure to add difference between training from scratch or with preloaded weights
     # make sure to validate as well between epochs
@@ -69,14 +69,15 @@ def main():
 
     opt = tf.keras.optimizers.SGD(learning_rate=FLAGS.learning_rate * hvd.size(), momentum=FLAGS.momentum)
     if not FLAGS.fp32:
-        opt = tf.keras.mixed_precision.experimental.LossScaleOptimizer(opt, loss_scale="dynamic")
+       #opt = tf.keras.mixed_precision.experimental.LossScaleOptimizer(opt, loss_scale="dynamic")
+       opt = tf.train.experimental.enable_mixed_precision_graph_rewrite(opt, loss_scale='dynamic')
     opt = hvd.DistributedOptimizer(opt)
 
     loss_func = tf.keras.losses.SparseCategoricalCrossentropy()
 
     callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]
     if hvd.rank() == 0:
-        callbacks.append(callbacks.append(keras.callbacks.ModelCheckpoint('./checkpoint-{epoch}.h5')))
+        callbacks.append(tf.keras.callbacks.ModelCheckpoint('./work_dir/resnet50_checkpoints/checkpoint-{epoch}.h5'))
 
     model.compile(
         loss=loss_func,
@@ -84,11 +85,14 @@ def main():
         metrics=['accuracy'],
         experimental_run_tf_function=False
     )
+
+    validation_data = create_dataset(FLAGS.validation_data_dir, FLAGS.batch_size)
     
     model.fit(
         data,
+        validation_data=validation_data,
         callbacks=callbacks,
-        epochs=FLAGS.num_epochs
+        epochs=FLAGS.num_epochs,
         verbose=1 if hvd.rank() == 0 else 0
     )
 
