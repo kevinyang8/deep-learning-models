@@ -7,6 +7,7 @@ import datetime
 import random
 import logging
 from tqdm import tqdm
+from time import time
 import sys
 
 from awsdet.utils.schedulers.schedulers import WarmupScheduler
@@ -51,7 +52,7 @@ def add_cli_args():
                          help="""Size of each minibatch per GPU""")
     cmdline.add_argument('--num_epochs', default=100, type=int,
                          help="""Number of epochs to train for.""")
-    cmdline.add_argument('-lr', '--learning_rate', default=0.01, type=float,
+    cmdline.add_argument('-lr', '--learning_rate', default=0.1, type=float,
                          help="""Start learning rate""")
     cmdline.add_argument('--momentum', default=0.9, type=float,
                          help="""Start learning rate""")
@@ -136,8 +137,9 @@ def main():
             model = tf.keras.applications.ResNet50(weights='imagenet', classes=1000)
 
     learning_rate = FLAGS.learning_rate * hvd.size()
+    steps_per_epoch = (1.2e6 / (FLAGS.batch_size * hvd.size()))
     scheduler = tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-                    boundaries=[30, 60, 80], 
+                    boundaries=[steps_per_epoch * 30, steps_per_epoch * 60, steps_per_epoch * 80], 
                     values=[learning_rate, learning_rate * 0.1, learning_rate * 0.01, learning_rate * 0.001])
     scheduler = WarmupScheduler(optimizer=scheduler, initial_learning_rate=learning_rate, warmup_steps=5)
     opt = tf.keras.optimizers.SGD(learning_rate=scheduler, momentum=FLAGS.momentum)
@@ -150,7 +152,6 @@ def main():
         model_dir = os.path.join(FLAGS.model + datetime.datetime.now().strftime("_%Y-%m-%d_%H-%M-%S"))
         path_logs = os.path.join(os.getcwd(), model_dir, 'log.csv')
         os.mkdir(model_dir)
-
         logging.basicConfig(filename=path_logs,
                             filemode='a',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
@@ -158,11 +159,14 @@ def main():
                             level=logging.DEBUG)
         logging.info("Training Logs")
         logger = logging.getLogger('logger')
+        logger.info('Batch Size: %f, Learning Rate: %f, Momentum: %f' % \
+                    (FLAGS.batch_size, FLAGS.learning_rate, FLAGS.momentum))
     
     #checkpoint = tf.train.Checkpoint(model=model, optimizer=opt)
 
     hvd.allreduce(tf.constant(0))
-
+    
+    start_time = time()
     for epoch in range(FLAGS.num_epochs):
         if hvd.rank() == 0:
             print('Starting training Epoch %d/%d' % (epoch, FLAGS.num_epochs))
@@ -196,6 +200,8 @@ def main():
             print(info_str)
             logger.info(info_str)
             #checkpoint.save(path_checkpoint)
+    if hvd.rank() == 0:
+        logger.info('Total Training Time: %f' % (time() - start_time))
 
 
 if __name__ == '__main__':
