@@ -2,19 +2,28 @@
 # SPDX-License-Identifier: Apache-2.0
 # -*- coding: utf-8 -*-
 import tensorflow as tf
+import re
 from ..registry import BACKBONES
 from awsdet.utils.keras import get_base_model, get_outputs
 
 
 @BACKBONES.register_module
 class KerasBackbone(tf.keras.Model):
-    def __init__(self, model_name, weights_path=None, weight_decay=1e-4, **kwargs):
+    def __init__(self, model_name, weights_path=None, weight_decay=1e-4, frozen_layers=None, **kwargs):
         super(KerasBackbone, self).__init__(**kwargs)
         self.model_name = model_name
         self.weights_path = weights_path
         _base_model = get_base_model(model_name, weights_path, weight_decay=weight_decay)
         self._model = tf.keras.Model(inputs=_base_model.input,
                                      outputs=get_outputs(_base_model), name=model_name)
+        
+        if frozen_layers != None:
+            model_config = self._model.get_config()
+            for layer, layer_config in zip(self._model.layers, model_config['layers']):
+                for pattern in frozen_layers:
+                    if re.match(pattern, layer.name):
+                        layer_config['config']['trainable'] = False
+            self._model = tf.keras.models.Model.from_config(model_config)
 
 
     @tf.function

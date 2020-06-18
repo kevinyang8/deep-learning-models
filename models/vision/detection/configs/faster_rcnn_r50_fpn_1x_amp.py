@@ -10,7 +10,8 @@ model = dict(
         type='KerasBackbone',
         model_name='ResNet50V1',
         weights_path='weights/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5',
-        weight_decay=1e-5
+        weight_decay=1e-5,
+        frozen_layers=['conv2.*']
     ),
     neck=dict(
         type='FPN',
@@ -63,7 +64,7 @@ test_cfg = dict(
 )
 # dataset settings
 dataset_type = 'CocoDataset'
-data_root = '/data/COCO/'
+data_root = '/deep-learning-models/models/vision/detection/data/'
 data = dict(
     imgs_per_gpu=4,
     train=dict(

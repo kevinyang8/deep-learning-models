@@ -435,7 +435,7 @@ def ResNet50(include_top=True,
              weight_decay=0.0001,
              **kwargs):
     def stack_fn(x):
-        x = stack1(x, 64, 3, stride1=1, name='conv2', trainable=False, weight_decay=weight_decay)
+        x = stack1(x, 64, 3, stride1=1, name='conv2', weight_decay=weight_decay)
         x = stack1(x, 128, 4, name='conv3', weight_decay=weight_decay)
         x = stack1(x, 256, 6, name='conv4', weight_decay=weight_decay)
         x = stack1(x, 512, 3, name='conv5', weight_decay=weight_decay)
