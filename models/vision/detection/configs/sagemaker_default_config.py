@@ -27,12 +27,20 @@ weights_path = '/workspace/shared_workspace/autograph/mmdetection_tf/configs/wei
 # Model artifact paths
 # Data input and output locations
 ########################################################################################################################
+use_fsx = False
+fsx_prefix = '/opt/ml/input/data/training' # this is the location where sagemaker will put FSx data.
 
 dataset_type = 'CocoDataset'
-data_root = pathlib.Path(os.getenv('SM_CHANNEL_COCO')).joinpath('coco').as_posix()
+if not use_fsx:
+    data_root = pathlib.Path(os.getenv('SM_CHANNEL_COCO')).joinpath('coco').as_posix()
+else:
+    data_root = os.path.join(fsx_prefix, 'faster-rcnn', 'data', 'coco')
 
 weights_file = 'resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5'
-weights_path = pathlib.Path(os.getenv('SM_CHANNEL_WEIGHTS')).joinpath(weights_file).as_posix()
+if not use fsx:
+    weights_path = pathlib.Path(os.getenv('SM_CHANNEL_WEIGHTS')).joinpath(weights_file).as_posix()
+else:
+    weights_path = os.path.join(fsx_prefix, 'faster-rcnn', 'data', 'weights', weights_file)
 
 outputs_path = pathlib.Path(os.getenv('SM_OUTPUT_DATA_DIR')).as_posix()
 output_weights = pathlib.Path(os.getenv('SM_OUTPUT_DATA_DIR')).joinpath('faster-rcnn-resnet-50-weights').as_posix()

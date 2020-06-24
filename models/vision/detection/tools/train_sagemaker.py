@@ -57,8 +57,13 @@ set_random_seed(1337 + hvd.rank(), deterministic=True)
 def decompress_data(cfg):
     if hvd.local_rank()==0:
         print("Decompressing Data")
-        coco_tar = tarfile.open(pathlib.Path(os.getenv('SM_CHANNEL_COCO')).joinpath('coco.tar').as_posix())
-        coco_tar.extractall(path=os.getenv('SM_CHANNEL_COCO'))
+        if not cfg.fsx:
+            coco_tar = tarfile.open(pathlib.Path(os.getenv('SM_CHANNEL_COCO')).joinpath('coco.tar').as_posix())
+            coco_tar.extractall(path=os.getenv('SM_CHANNEL_COCO'))
+        else:
+            fsx_prefix = '/opt/ml/input/data/training'
+            coco_tar = tarfile.open(os.path.join(fsx_prefix, 'faster-rcnn', 'data', 'coco', 'coco.tar'))
+            coco_tar.extractall(path=os.path.join(fsx_prefix, 'faster-rcnn', 'data'))
     # block other ranks form skipping ahead before data is ready
     barrier = hvd.allreduce(tf.random.normal(shape=[1]))    
 
@@ -176,6 +181,7 @@ def parse():
     parser.add_argument("--use_rcnn_bn", help="bool")
     parser.add_argument("--use_conv", help="bool")
     parser.add_argument("--ls", help="float")
+    parser.add_argument("--fsx", help="bool", default=False)
 
     args = parser.parse_args()
     return args
@@ -202,4 +208,5 @@ if __name__=='__main__':
     cfg.workers_per_gpu = 1 # unused
     cfg.warmup_init_lr_scale = float(args.warmup_init_lr_scale)
     cfg.warmup_steps = int(args.warmup_steps)
+    cfg.fsx = args.fsx
     main(cfg)
