@@ -65,6 +65,8 @@ def decompress_data(cfg):
             coco_tar = tarfile.open(os.path.join(fsx_prefix, 'faster-rcnn', 'data', 'coco', 'coco.tar'))
             coco_tar.extractall(path=os.path.join(fsx_prefix, 'faster-rcnn', 'data'))
     # block other ranks form skipping ahead before data is ready
+    if cfg.fsx:
+        os.environ['HDF5_USE_FILE_LOCKING'] = 'FALSE'
     barrier = hvd.allreduce(tf.random.normal(shape=[1]))    
 
 def setup_paths(instance_name, s3_path):
@@ -97,7 +99,6 @@ def main(cfg):
         cfg.model['bbox_head']['use_bn'] = cfg.use_rcnn_bn
     if cfg.use_conv:
         cfg.model['bbox_head']['use_conv'] = cfg.use_conv
-
     cfg.schedule = args.schedule
     model = build_detector(cfg.model,
                            train_cfg=cfg.train_cfg,
