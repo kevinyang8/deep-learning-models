@@ -3,7 +3,8 @@
 # -*- coding: utf-8 -*-
 from .builder import build_dataset
 from .coco import CocoDataset
+from .pascal import PascalDataset
 from .registry import DATASETS
 from .loader.build_loader import build_dataloader
 
-__all__ = ['DATASETS', 'build_dataset', 'build_dataloader', 'CocoDataset']
+__all__ = ['DATASETS', 'build_dataset', 'build_dataloader', 'CocoDataset', 'PascalDataset']
