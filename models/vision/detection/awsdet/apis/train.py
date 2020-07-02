@@ -9,7 +9,7 @@ import tensorflow_addons as tfa
 import numpy as np
 import tensorflow as tf
 from ..utils.runner import (Runner, get_dist_info, obj_from_dict)
-from awsdet.core import CocoDistEvalmAPHook, CocoDistEvalRecallHook
+from awsdet.core import CocoDistEvalmAPHook, CocoDistEvalRecallHook, DistEvalmAPHook
 #                        DistEvalmAPHook, DistOptimizerHook, Fp16OptimizerHook)
 from awsdet.datasets import DATASETS, build_dataloader
 #from awsdet.models import RPN
@@ -204,7 +204,8 @@ def _dist_train(model,
     if validate and runner.rank < runner.local_size: # register this dist eval hook only for Node 0
         val_dataset_cfg = cfg.data.val
         eval_cfg = cfg.get('evaluation', {})
-        runner.register_hook(CocoDistEvalmAPHook(val_dataset_cfg, **eval_cfg))
+        #runner.register_hook(CocoDistEvalmAPHook(val_dataset_cfg, **eval_cfg))
+        runner.register_hook(DistEvalmAPHook(val_dataset_cfg, **eval_cfg))
 
     if cfg.resume_from:
         runner.resume(cfg.resume_from)

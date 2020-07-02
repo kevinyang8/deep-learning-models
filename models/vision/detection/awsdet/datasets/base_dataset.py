@@ -21,6 +21,18 @@ class BaseDataset(ABC):
         pass
     
     @abstractmethod
+    def get_ann_info(self, index):
+        pass
+    
+    @abstractmethod
+    def num_classes(self):
+        pass
+    
+    @abstractmethod
+    def get_labels(self):
+        pass
+    
+    @abstractmethod
     def __len__(self):
         pass
 

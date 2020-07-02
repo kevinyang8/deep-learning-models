@@ -263,7 +263,7 @@ def get_cls_results(det_results, annotations, class_id):
             ignore_inds = ann['labels_ignore'] == (class_id + 1)
             cls_gts_ignore.append(ann['bboxes_ignore'][ignore_inds, :])
         else:
-            cls_gts_ignore.append(np.array((0, 4), dtype=np.float32))
+            cls_gts_ignore.append(np.empty((0, 4), dtype=np.float32))
 
     return cls_dets, cls_gts, cls_gts_ignore
 
@@ -304,6 +304,10 @@ def eval_map(det_results,
     Returns:
         tuple: (mAP, [dict, dict, ...])
     """
+    # for the case where the validation size is not divisible by hvd.size()
+    if len(det_results) < len(annotations):
+        diff = len(annotations) - len(det_results)
+        annotations = annotations[:-diff]
     assert len(det_results) == len(annotations)
 
     num_imgs = len(det_results)
@@ -435,10 +439,8 @@ def print_map_summary(mean_ap,
 
     if dataset is None:
         label_names = [str(i) for i in range(1, num_classes + 1)]
-    elif is_str(dataset):
-        label_names = get_classes(dataset)
     else:
-        label_names = dataset
+        label_names = dataset.get_labels()
 
     if not isinstance(mean_ap, list):
         mean_ap = [mean_ap]

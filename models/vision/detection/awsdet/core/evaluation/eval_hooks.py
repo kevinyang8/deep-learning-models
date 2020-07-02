@@ -65,7 +65,7 @@ class DistEvalHook(Hook):
             scores = outputs['scores']
             # print(labels)
             # print(scores)
-            result = transforms.bbox2result(bboxes, labels, scores, num_classes=self.dataset.CLASSES+1) # add background class
+            result = transforms.bbox2result(bboxes, labels, scores, num_classes=self.dataset.num_classes()+1) # add background class
             results[i*runner.local_size+runner.local_rank] = result
             if runner.rank == 0:
                 prog_bar.update()
@@ -89,17 +89,20 @@ class DistEvalmAPHook(DistEvalHook):
         annotations = [
             self.dataset.get_ann_info(i) for i in range(len(self.dataset))
         ]
+        '''
         # If the dataset is VOC2007, then use 11 points mAP evaluation.
         if hasattr(self.dataset, 'year') and self.dataset.year == 2007:
             ds_name = 'voc07'
         else:
-            ds_name = self.dataset.CLASSES
+            #ds_name = self.dataset.CLASSES
+            ds_name = None
+        '''
         mean_ap, eval_results = eval_map(
             results,
             annotations,
             scale_ranges=None,
             iou_thr=0.5,
-            dataset=ds_name,
+            dataset=self.dataset,
             logger=runner.logger)
         runner.log_buffer.output['mAP'] = mean_ap
         runner.log_buffer.ready = True

@@ -62,8 +62,8 @@ train_cfg = dict(
 test_cfg = dict(
 )
 # dataset settings
-dataset_type = 'CocoDataset'
-data_root = '/data/COCO/'
+dataset_type = 'PascalDataset'
+data_root = '/deep-learning-models/models/vision/detection/data/pascal/VOCdevkit/VOC2012/'
 data = dict(
     imgs_per_gpu=4,
     train=dict(

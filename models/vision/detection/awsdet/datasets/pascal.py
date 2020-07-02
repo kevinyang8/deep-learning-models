@@ -33,6 +33,7 @@ class PascalDataset(BaseDataset):
                 self.files.append(line[:-1])
         
         self._build_category_ids()
+        self.classes = len(self.category_ids)
 
         # doesn't actually filter any images, but gives an example of what filtering might look like
         self.files = self._filter_images()
@@ -66,7 +67,7 @@ class PascalDataset(BaseDataset):
         categories = sorted(categories)
         self.category_ids = {}
         for i, category in enumerate(categories):
-            self.category_ids[category] = i
+            self.category_ids[category] = i + 1
 
     def _parse_xml(self, file_path):
         tree = etree.parse('{}/Annotations/{}.xml'.format(self.dataset_dir, file_path))
@@ -108,6 +109,20 @@ class PascalDataset(BaseDataset):
                 continue
             new_files.append(f)
         return new_files
+
+    def get_ann_info(self, index):
+        file_path = self.files[index]
+        _, _, labels, bboxes = self._parse_xml(file_path)
+        ann = dict(bboxes=np.array(bboxes),
+                   labels=np.array(labels),
+                   bboxes_ignore=np.zeros((0, 4), dtype=np.float32))
+        return ann
+
+    def num_classes(self):
+        return self.classes
+    
+    def get_labels(self):
+        return list(self.category_ids.keys())
 
     def __len__(self):
         return len(self.files)

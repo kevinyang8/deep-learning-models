@@ -177,11 +177,11 @@ def bbox2result(bboxes, labels, scores, num_classes):
 
     if bboxes.shape[0] == 0:
         return [
-            np.zeros((0, 5), dtype=np.float32) for i in range(num_classes - 1)
+            np.zeros((0, 5), dtype=np.float32) for i in range(1, num_classes)
         ]
     else:
         bboxes = tf.concat([bboxes,tf.expand_dims(scores, axis=1)], axis=-1)
         bboxes = bboxes.numpy()
         labels = labels.numpy()
-        return [bboxes[labels == i, :] for i in range(num_classes - 1)]
+        return [bboxes[labels == i, :] for i in range(1, num_classes)]
 
