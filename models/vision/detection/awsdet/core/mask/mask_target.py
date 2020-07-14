@@ -57,9 +57,10 @@ class MaskTarget:
     def get_weights(self, valid_flgs, img_metas):        
         batch_size = tf.shape(img_metas)[0]
         batch_size = tf.cast(batch_size, valid_flgs.dtype)
-        pixel_size = tf.cast(self.mask_size[0]*self.mask_size[1], valid_flgs.dtype)
-        weights = (valid_flgs/(tf.reduce_sum(valid_flgs)*pixel_size))*batch_size
-        return weights
+        pixel_size = self.mask_size[0]*self.mask_size[1]
+        inside_weights = tf.repeat(valid_flgs, pixel_size)
+        outside_weights = (inside_weights/(tf.reduce_sum(inside_weights)))*batch_size
+        return inside_weights, outside_weights
     
     def crop_masks(self, gt_masks, fg_rois_list, fg_offsets):
         """
@@ -82,5 +83,5 @@ class MaskTarget:
         fg_reduced, fg_targets, valid_flgs = self.get_assignments(fg_assignments, rcnn_target_matchs, img_metas)
         fg_offset = self.compute_offset(fg_reduced, gt_masks)
         mask_crops = self.crop_masks(gt_masks, fg_rois_list, fg_offset)
-        weights = self.get_weights(valid_flgs, img_metas)
-        return mask_crops, fg_targets, weights
+        inside_weights, outside_weights = self.get_weights(valid_flgs, img_metas)
+        return mask_crops, fg_targets, inside_weights, outside_weights
