@@ -59,7 +59,7 @@ model = dict(
     ),
     mask_head=dict(
         type='MaskHead',
-        num_classes=80,
+        num_classes=81,
         weight_decay=1e-5,
         use_bn=False,
     ),
@@ -67,7 +67,7 @@ model = dict(
         type='PyramidROIAlign',
         pool_shape=[14, 14],
         pool_type='avg',
-        use_tf_crop_and_resize=True,
+        use_tf_crop_and_resize=False,
     ),
 )
 # model training and testing settings

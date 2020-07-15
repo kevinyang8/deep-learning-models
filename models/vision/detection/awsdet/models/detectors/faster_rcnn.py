@@ -166,11 +166,9 @@ class FasterRCNN(TwoStageDetector):
                     'scores': detections_list[0][2]
             }
             if self.mask:
-                mask_boxes = [tf.round(detections_dict['bboxes'])]
                 mask_pooled_regions_list = self.mask_roi_extractor(
-                                        (mask_boxes, 
+                                        ([detections_dict['bboxes']], 
                                          rcnn_feature_maps, img_metas), training=training)
                 rcnn_masks = self.mask_head(mask_pooled_regions_list)
-                rcnn_masks = self.mask_head.mask_target.slice_masks(rcnn_masks, detections_dict['labels'] - 1)
-                detections_dict['masks'] = self.mask_head.mold_masks(rcnn_masks, mask_boxes[0], img_metas[0])
+                detections_dict['masks'] = self.mask_head.mask_target.slice_masks(rcnn_masks, detections_dict['labels'] - 1)
             return detections_dict

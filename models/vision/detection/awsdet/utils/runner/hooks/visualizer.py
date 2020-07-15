@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 from .hook import Hook
 from awsdet.utils.visualization import visualize
+from awsdet.core.mask.transforms import paste_masks
 from awsdet import datasets
 from awsdet.utils.runner.dist_utils import master_only
 from concurrent.futures import ThreadPoolExecutor
@@ -43,7 +44,8 @@ class Visualizer(Hook):
         original_image *= self.img_std
         original_image += self.img_mean
         if 'masks' in result.keys():
-            result['masks'] = result['masks'][:, :int(meta[0][3]), :int(meta[0][4]), :]
+            pasted_masks = paste_masks(result['bboxes'], result['masks'], meta[0])
+            resized_masks = tf.cast(pasted_masks[:, :int(meta[0][3]), :int(meta[0][4]), :], tf.float32)
         detection_dict = {}
         detection_dict['top_boxes'] = tf.gather_nd(result['bboxes'], 
                                  tf.where(result['scores']>=self.threshold))
@@ -52,7 +54,7 @@ class Visualizer(Hook):
         detection_dict['top_scores'] = tf.gather_nd(result['scores'], 
                                       tf.where(result['scores']>=self.threshold))
         if 'masks' in result.keys():
-            detection_dict['top_masks'] = tf.gather_nd(result['masks'],
+            detection_dict['top_masks'] = tf.gather_nd(resized_masks,
                                      tf.where(result['scores']>=self.threshold))
         # if no results, grab the top k predictions
         if tf.shape(detection_dict['top_boxes'])[0]==0:

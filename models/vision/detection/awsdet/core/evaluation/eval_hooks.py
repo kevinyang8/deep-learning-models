@@ -66,7 +66,7 @@ class DistEvalHook(Hook):
             scores = outputs['scores']
             result = transforms.bbox2result(bboxes, labels, scores, num_classes=self.dataset.CLASSES+1) # add background class
             if runner.model.mask:
-                mask = mask2result(outputs['masks'], labels, img_meta[0])
+                mask = mask2result(outputs['masks'], outputs['bboxes'], labels, img_meta[0])
                 results[i*runner.local_size+runner.local_rank] = (result, mask)
             else:
                 results[i*runner.local_size+runner.local_rank] = result
