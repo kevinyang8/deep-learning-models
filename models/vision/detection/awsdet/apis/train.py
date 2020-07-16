@@ -8,10 +8,12 @@ from collections import OrderedDict
 import tensorflow_addons as tfa
 import numpy as np
 import tensorflow as tf
+import tensorflow_addons as tfa
 from ..utils.runner import (Runner, get_dist_info, obj_from_dict)
 from awsdet.core import CocoDistEvalmAPHook, CocoDistEvalRecallHook
 #                        DistEvalmAPHook, DistOptimizerHook, Fp16OptimizerHook)
 from awsdet.datasets import DATASETS, build_dataloader
+from awsdet.utils.optimizers import optimizers
 #from awsdet.models import RPN
 
 
@@ -137,9 +139,9 @@ def train_detector(model,
                         validate=validate,
                         mixed_precision=mixed_precision,
                         logger=logger,
-                        timestamp=timestamp)
-
-
+                        timestamp=timestamp)       
+        
+        
 def build_optimizer(optimizer_cfg):
     """Build optimizer from configs.
 
@@ -158,6 +160,8 @@ def build_optimizer(optimizer_cfg):
 
     """
     optimizer_cfg = optimizer_cfg.copy()
+    if optimizer_cfg['type'].endswith('W'):
+        return obj_from_dict(optimizer_cfg, optimizers)
     return obj_from_dict(optimizer_cfg, tf.keras.optimizers)
 
 
@@ -181,6 +185,7 @@ def _dist_train(model,
 
     # build runner
     optimizer = build_optimizer(cfg.optimizer)
+    # do this manually with tfa
     if mixed_precision:
         optimizer = tf.train.experimental.enable_mixed_precision_graph_rewrite(optimizer, loss_scale='dynamic')
 

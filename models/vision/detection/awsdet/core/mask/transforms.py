@@ -16,6 +16,8 @@ def paste_single_mask(box, mask, shape):
     y1 = tf.math.maximum(y0, y1)
     w = x1 - x0
     h = y1 - y0
+    if tf.math.minimum(w, h)<=1:
+        return tf.expand_dims(tf.zeros(shape, dtype=tf.int32), [-1])
     mask = tf.cast(tf.image.resize(mask, (h, w))>0.5, tf.int32)
     int_box = tf.stack([y0, x0, y1, x1])
     pad_shape = [[int_box[0], shape[0] - int_box[2]], [int_box[1], shape[1]-int_box[3]], [0, 0]]
@@ -24,7 +26,6 @@ def paste_single_mask(box, mask, shape):
 
 def paste_masks(boxes, masks, img_metas):
     shape = tf.cast(img_metas[6:8], tf.int32)
-    masks = tf.sigmoid(masks)
     mask_count = tf.shape(masks)[0]
     mask_array = tf.TensorArray(tf.int32, size=mask_count)
     for idx in range(mask_count):
@@ -95,7 +96,7 @@ def paste_mask_np(box, mask, shape, fast=True, threshold=0.5):
         ret[y0:y1 + 1, x0:x1 + 1] = mask
         return ret
     
-def mask2result(masks, bboxes, labels, meta, num_classes=80, threshold=0.5, fast=True):
+def mask2result(masks, bboxes, labels, meta, threshold=0.5, fast=True):
     if tf.is_tensor(bboxes):
         bboxes = bboxes.numpy()
     if tf.is_tensor(masks):
@@ -121,4 +122,4 @@ def mask2result(masks, bboxes, labels, meta, num_classes=80, threshold=0.5, fast
                     np.array(
                         masks[i][:, :, np.newaxis], order='F',
                         dtype='uint8'))[0])
-    return masks
+    return lists

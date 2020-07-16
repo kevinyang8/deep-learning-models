@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # -*- coding: utf-8 -*-
 # model settings
+from datetime import datetime
 model = dict(
     type='FasterRCNN',
     pretrained=None,
@@ -9,7 +10,7 @@ model = dict(
         type='KerasBackbone',
         model_name='ResNet50V1',
         weights_path='/workspace/shared_workspace/data/weights/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5',
-        weight_decay=1e-5
+        weight_decay=0
     ),
     neck=dict(
         type='FPN',
@@ -17,7 +18,7 @@ model = dict(
         out_channels=256,
         num_outs=5,
         interpolation_method='bilinear',
-        weight_decay=1e-5,
+        weight_decay=0,
     ),
     rpn_head=dict(
         type='RPNHead',
@@ -35,7 +36,7 @@ model = dict(
         num_post_nms_train=2000,
         num_pre_nms_test=12000,
         num_post_nms_test=2000,
-        weight_decay=1e-5,
+        weight_decay=0,
     ),
     bbox_roi_extractor=dict(
         type='PyramidROIAlign',
@@ -52,7 +53,7 @@ model = dict(
         min_confidence=0.001, 
         nms_threshold=0.5,
         max_instances=100,
-        weight_decay=1e-5,
+        weight_decay=0,
         use_conv=True,
         use_bn=False,
         soft_nms_sigma=0.5
@@ -60,19 +61,19 @@ model = dict(
     mask_head=dict(
         type='MaskHead',
         num_classes=81,
-        weight_decay=1e-5,
+        weight_decay=0,
         use_bn=False,
     ),
     mask_roi_extractor=dict(
         type='PyramidROIAlign',
         pool_shape=[14, 14],
         pool_type='avg',
-        use_tf_crop_and_resize=False,
+        use_tf_crop_and_resize=True,
     ),
 )
 # model training and testing settings
 train_cfg = dict(
-    weight_decay=1e-5,
+    weight_decay=0,
 )
 test_cfg = dict(
 )
@@ -120,7 +121,8 @@ data = dict(
 evaluation = dict(interval=1)
 # optimizer
 optimizer = dict(
-    type='SGD',
+    type='SGDW',
+    weight_decay=1e-4,
     learning_rate=1e-2,
     momentum=0.9,
     nesterov=False,
@@ -142,15 +144,15 @@ log_config = dict(
     interval=50,
     hooks=[
         dict(type='TextLoggerHook'),
-        dict(type='TensorboardLoggerHook', log_dir='/tmp/tensorboard',
-             image_interval=500),
+        dict(type='TensorboardLoggerHook', log_dir='/tmp/tensorboard/{}'.format(str(datetime.now()).split('.')[0].replace(' ','_')),
+             image_interval=100),
         dict(type='Visualizer', dataset_cfg=data['val'])
     ])
 # yapf:enable
 # runtime settings
 total_epochs = 12
 log_level = 'INFO'
-work_dir = './work_dirs/faster_rcnn_r50_fpn_1x_coco'
+work_dir = './work_dirs/faster_rcnn_r50_fpn_1x_coco/{}'.format(str(datetime.now()).split('.')[0].replace(' ','_'))
 load_from = None
 resume_from = None
 workflow = [('train', 1)]

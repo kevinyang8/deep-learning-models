@@ -303,6 +303,7 @@ class Runner(object):
             clipped_grads, global_norm = tf.clip_by_global_norm(grads, self.gradient_clip)
             grads = clipped_grads
         # if self.rank == 0: tf.print(global_norm, all_are_finite)
+        decay_vars = [i for i in var_list if 'bias' not in i.name]
         self.optimizer.apply_gradients(zip(grads, var_list))
         return outputs
 

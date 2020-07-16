@@ -60,7 +60,7 @@ def retinanet_bbox_loss(deltas, target_deltas, avg_factor=1.0):
     return tf.cast(tf.reduce_sum(loss) / avg_factor, tf.float32)
 
 
-def rpn_class_loss(logits, labels, avg_factor=256.0, weight=1.0, label_smoothing=0.0):
+def rpn_class_loss(logits, labels, avg_factor=256.0, weight=2.0, label_smoothing=0.0):
     """
     :param weight:
     :param logits: [batch size * num_anchors, 2]
@@ -70,10 +70,12 @@ def rpn_class_loss(logits, labels, avg_factor=256.0, weight=1.0, label_smoothing
     onehot_labels = tf.one_hot(tf.cast(labels, tf.int32), depth=2)
     batch_loss_sum = tf.reduce_sum(
                         tf.nn.softmax_cross_entropy_with_logits(onehot_labels, logits))
-    return tf.cast(batch_loss_sum / avg_factor, tf.float32)
+    loss = tf.cast(batch_loss_sum / avg_factor, tf.float32)
+    loss = loss * weight
+    return loss
 
 
-def rpn_bbox_loss(rpn_deltas, target_deltas, rpn_inside_weights, rpn_outside_weights):
+def rpn_bbox_loss(rpn_deltas, target_deltas, rpn_inside_weights, rpn_outside_weights, weight=4.0):
     '''Return the RPN bounding box loss    
     Args
     ---
@@ -87,6 +89,7 @@ def rpn_bbox_loss(rpn_deltas, target_deltas, rpn_inside_weights, rpn_outside_wei
                               rpn_inside_weights,
                               rpn_outside_weights,
                               sigma=3.0, dim=[0, 1])
+    loss = loss * weight
     return loss
 
 

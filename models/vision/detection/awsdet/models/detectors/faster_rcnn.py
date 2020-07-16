@@ -170,5 +170,5 @@ class FasterRCNN(TwoStageDetector):
                                         ([detections_dict['bboxes']], 
                                          rcnn_feature_maps, img_metas), training=training)
                 rcnn_masks = self.mask_head(mask_pooled_regions_list)
-                detections_dict['masks'] = self.mask_head.mask_target.slice_masks(rcnn_masks, detections_dict['labels'] - 1)
+                detections_dict['masks'] = tf.sigmoid(self.mask_head.mask_target.slice_masks(rcnn_masks, detections_dict['labels'] - 1))
             return detections_dict

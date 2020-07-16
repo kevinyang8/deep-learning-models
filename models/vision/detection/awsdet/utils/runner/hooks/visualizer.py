@@ -41,10 +41,12 @@ class Visualizer(Hook):
     def get_prediction(self, img, meta, model):
         result = model((img, meta), training=False)
         original_image = img[0][:int(meta[0][3]), :int(meta[0][4])]
-        original_image *= self.img_std
-        original_image += self.img_mean
+        #original_image *= self.img_std
+        #original_image += self.img_mean
+        original_image = (tf.reverse(original_image, axis=[-1])+self.img_mean)
         if 'masks' in result.keys():
             pasted_masks = paste_masks(result['bboxes'], result['masks'], meta[0])
+            #pasted_masks = model.mask_head.mold_masks(result['masks'], result['bboxes'], meta[0])
             resized_masks = tf.cast(pasted_masks[:, :int(meta[0][3]), :int(meta[0][4]), :], tf.float32)
         detection_dict = {}
         detection_dict['top_boxes'] = tf.gather_nd(result['bboxes'], 
