@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # -*- coding: utf-8 -*-
 # model settings
+from datetime import datetime
+
 model = dict(
     type='CascadeRCNN',
     pretrained=None,
@@ -147,7 +149,7 @@ evaluation = dict(interval=1)
 # optimizer
 optimizer = dict(
     type='SGDW',
-    weight_decay=25e-4,
+    weight_decay=1e-4,
     learning_rate=1e-2,
     momentum=0.9,
     nesterov=False,

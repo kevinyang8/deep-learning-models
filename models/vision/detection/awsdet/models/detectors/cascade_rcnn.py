@@ -30,6 +30,7 @@ class CascadeRCNN(TwoStageDetector):
             test_cfg=test_cfg,
             pretrained=pretrained)
         self.pretrained = pretrained
+        self.mask = False
     
     def init_weights(self):
         super(CascadeRCNN, self).init_weights(self.pretrained)
