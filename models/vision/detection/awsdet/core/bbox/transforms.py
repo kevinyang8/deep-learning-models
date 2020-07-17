@@ -175,3 +175,18 @@ def bbox2result(bboxes, labels, scores, num_classes):
         labels = labels.numpy()
         return [bboxes[labels == i, :] for i in range(num_classes - 1)]
 
+def scale_box(box, scale):
+    w_half = (box[2] - box[0]) * 0.5
+    h_half = (box[3] - box[1]) * 0.5
+    x_c = (box[2] + box[0]) * 0.5
+    y_c = (box[3] + box[1]) * 0.5
+
+    w_half *= scale
+    h_half *= scale
+
+    scaled_box = tf.zeros_like(box)
+    scaled_box[0] = x_c - w_half
+    scaled_box[2] = x_c + w_half
+    scaled_box[1] = y_c - h_half
+    scaled_box[3] = y_c + h_half
+    return scaled_box

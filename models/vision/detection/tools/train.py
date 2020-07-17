@@ -10,6 +10,8 @@ import pathlib
 import tarfile
 import numpy as np
 import tensorflow as tf
+import sys
+sys.path.append('.')
 
 from awsdet.utils.misc import Config, mkdir_or_exist
 from awsdet.utils.runner import init_dist, master_only, get_dist_info, get_barrier
@@ -27,6 +29,7 @@ gpus = tf.config.experimental.list_physical_devices('GPU')
 ##### TENSORFLOW RUNTIME OPTIONS #####
 
 # tf.config.experimental_run_functions_eagerly(True)
+
 os.environ['TF_CUDNN_USE_AUTOTUNE']= str(0)
 os.environ['TF_DETERMINISTIC_OPS'] = str(1)
 os.environ['PYTHONHASHSEED']=str(17)

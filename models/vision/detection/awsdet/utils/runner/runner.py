@@ -303,6 +303,7 @@ class Runner(object):
             clipped_grads, global_norm = tf.clip_by_global_norm(grads, self.gradient_clip)
             grads = clipped_grads
         # if self.rank == 0: tf.print(global_norm, all_are_finite)
+        decay_vars = [i for i in var_list if 'bias' not in i.name]
         self.optimizer.apply_gradients(zip(grads, var_list))
         return outputs
 
@@ -314,7 +315,7 @@ class Runner(object):
         '''
         if self.rank != 0:
             return
-        imgs, img_metas, gt_boxes, gt_class_ids = data_batch
+        imgs, img_metas, gt_boxes, gt_class_ids, *gt_mask = data_batch
         detections_dict = self.batch_processor(self.model, (tf.expand_dims(imgs[0], axis=0), tf.expand_dims(img_metas[0], axis=0)), train_mode=False)
         for l, b in zip(gt_class_ids,gt_boxes):
             print('GT', l, b)

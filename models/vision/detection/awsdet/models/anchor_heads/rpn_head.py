@@ -146,8 +146,7 @@ class RPNHead(AnchorHead):
             Returns:
                 Scalars class loss and box loss
         """
-        #num_images = len(img_metas)
-        num_images = img_metas.shape[0]
+        num_images = len(img_metas)
         featmap_sizes = []
         cls_logits_list = [[] for _ in range(num_images)]
         deltas_list = [[] for _ in range(num_images)]
