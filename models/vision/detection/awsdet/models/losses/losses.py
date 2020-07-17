@@ -60,7 +60,7 @@ def retinanet_bbox_loss(deltas, target_deltas, avg_factor=1.0):
     return tf.cast(tf.reduce_sum(loss) / avg_factor, tf.float32)
 
 
-def rpn_class_loss(logits, labels, avg_factor=256.0, weight=2.0, label_smoothing=0.0):
+def rpn_class_loss(logits, labels, avg_factor=256.0, weight=1.0, label_smoothing=0.0):
     """
     :param weight:
     :param logits: [batch size * num_anchors, 2]

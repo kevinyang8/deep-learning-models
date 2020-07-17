@@ -226,23 +226,15 @@ class BBoxHead(tf.keras.Model):
             #keep = tf.image.non_max_suppression(final_bboxes, cls_score,
             #                                    self.max_instances,
             #                                    iou_threshold=self.nms_threshold)
-            '''
             keep, selected_cls_scores, _ = tf.raw_ops.NonMaxSuppressionV5 (
                                                     boxes=final_bboxes, scores=cls_score,
                                                     max_output_size=self.max_instances,
                                                     iou_threshold=self.nms_threshold,
                                                     score_threshold=0.0,
                                                     soft_nms_sigma=self.soft_nms_sigma)
-            '''
-            keep = tf.raw_ops.NonMaxSuppressionV2(boxes=final_bboxes,
-                scores=cls_score, max_output_size=self.max_instances, iou_threshold=self.nms_threshold)
 
             pad_size = self.max_instances - tf.size(keep)
-            '''
             padded_scores = tf.pad(selected_cls_scores, paddings=[[0, pad_size]], constant_values=0.0)
-            res_scores = res_scores.write(cls_id-1, padded_scores)#.mark_used()
-            '''
-            padded_scores = tf.pad(tf.gather(cls_score, keep), paddings=[[0, pad_size]], constant_values=0.0)
             res_scores = res_scores.write(cls_id-1, padded_scores)#.mark_used()
             padded_bboxes = tf.pad(tf.gather(final_bboxes, keep), paddings=[[0, pad_size], [0, 0]], constant_values=0.0)
             res_bboxes = res_bboxes.write(cls_id-1, padded_bboxes)#.mark_used()
@@ -257,7 +249,6 @@ class BBoxHead(tf.keras.Model):
         bboxes_after_nms = tf.reshape(res_bboxes, [-1, 4])
         cls_after_nms = tf.reshape(res_cls, [-1])
 
-        '''
         _, final_idx = tf.nn.top_k(scores_after_nms,
                                    k=tf.minimum(self.max_instances, tf.size(scores_after_nms)),
                                    sorted=False)
@@ -265,7 +256,3 @@ class BBoxHead(tf.keras.Model):
         return (tf.gather(bboxes_after_nms, final_idx),
                 tf.gather(cls_after_nms, final_idx),
                 tf.gather(scores_after_nms, final_idx))
-        '''
-        return (tf.gather(bboxes_after_nms, keep),
-                tf.gather(cls_after_nms, keep),
-                tf.gather(scores_after_nms, keep))

@@ -49,13 +49,6 @@ class CascadeHead(tf.keras.Model):
             gt_class_ids, img_metas = inputs
         else:
             proposals_list, rcnn_feature_maps, img_metas = inputs
-        logits = []
-        probs = []
-        deltas = []
-        target_matches = []
-        target_deltas = []
-        in_weights = []
-        out_weights = []
         batch_size = img_metas.shape[0]
         loss_dict = {}
         for i in range(self.num_stages):
@@ -63,32 +56,25 @@ class CascadeHead(tf.keras.Model):
             if training:
                 rois_list, rcnn_target_matches, rcnn_target_deltas, inside_weights, \
                     outside_weights = self.bbox_targets[i].build_targets( \
-                    rois_list, gt_boxes, gt_class_ids, img_metas)
-                target_matches.append(rcnn_target_matches)
-                target_deltas.append(rcnn_target_deltas)
-                in_weights.append(inside_weights)
-                out_weights.append(outside_weights)    
+                    rois_list, gt_boxes, gt_class_ids, img_metas)    
             pooled_regions_list = self.bbox_roi_extractor(
                 (rois_list, rcnn_feature_maps, img_metas), training=training)
             rcnn_class_logits, rcnn_probs, rcnn_deltas = self.bbox_heads[i](pooled_regions_list, training=training)
             if training:
                 loss_dict['rcnn_class_loss_stage_{}'.format(i)] = losses.rcnn_class_loss(rcnn_class_logits, 
-                                                                                         rcnn_target_matches)
+                                                                                         rcnn_target_matches) * self.stage_loss_weights[i]
                 loss_dict['rcnn_box_loss_stage_{}'.format(i)] = losses.rcnn_bbox_loss(rcnn_deltas,
                                                                                       rcnn_target_deltas, 
                                                                                       inside_weights, 
-                                                                                      outside_weights)
-            logits.append(rcnn_class_logits)
-            probs.append(rcnn_probs)
-            deltas.append(rcnn_deltas)
+                                                                                      outside_weights) * self.stage_loss_weights[i]
             roi_shapes = [tf.shape(i)[0] for i in rois_list]
             refinements = tf.split(rcnn_deltas, roi_shapes)
             new_rois = []
             if i<(self.num_stages-1):
                 for j in range(batch_size):
-                    new_rois.append(transforms.delta2bbox(rois_list[j], refinements[j],
+                    new_rois.append(tf.stop_gradient(transforms.delta2bbox(rois_list[j], refinements[j],
                                                    target_means=self.bbox_heads[i].target_means, \
-                                                   target_stds=self.bbox_heads[i].target_stds))
+                                                   target_stds=self.bbox_heads[i].target_stds)))
                 rois_list = new_rois
         if training:
             return loss_dict

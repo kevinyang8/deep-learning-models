@@ -160,10 +160,7 @@ class ProposalTarget:
         final_labels = tf.tensor_scatter_nd_update(final_labels, zero_indices, zero_labels)
 
         # inside weights - positive examples are set, rest are zeros
-        if not self.reg_class_agnostic:
-            bbox_inside_weights = tf.zeros((tf.size(keep_inds), self.num_classes, 4), dtype=tf.float32)
-        else:
-            bbox_inside_weights = tf.zeros((tf.size(keep_inds), 1, 4), dtype=tf.float32)
+        bbox_inside_weights = tf.zeros((tf.size(keep_inds), self.num_classes, 4), dtype=tf.float32)
         if tf.size(fg_inds) > 0:
             if self.num_classes<2:
                 cur_index = tf.transpose(tf.stack([tf.range(tf.size(fg_inds)), tf.zeros(tf.size(fg_inds), dtype=tf.int32)]))
@@ -172,16 +169,9 @@ class ProposalTarget:
             bbox_inside_weights = tf.tensor_scatter_nd_update(bbox_inside_weights,
                                                        cur_index,
                                                        tf.ones([tf.size(fg_inds), 4], bbox_inside_weights.dtype))
-        if not self.reg_class_agnostic:
-            bbox_inside_weights = tf.reshape(bbox_inside_weights, [-1, self.num_classes * 4])
-        else:
-            bbox_inside_weights = tf.reshape(bbox_inside_weights, [-1, 4])
+        bbox_inside_weights = tf.reshape(bbox_inside_weights, [-1, self.num_classes * 4])
 
-        # final bbox target 
-        if not self.reg_class_agnostic:
-            final_bbox_targets = tf.zeros((tf.size(keep_inds), self.num_classes, 4), dtype=tf.float32)
-        else:
-            final_bbox_targets = tf.zeros((tf.size(keep_inds), 1, 4), dtype=tf.float32)
+        final_bbox_targets = tf.zeros((tf.size(keep_inds), self.num_classes, 4), dtype=tf.float32)
         if tf.size(fg_inds) > 0:
 
             bbox_targets = transforms.bbox2delta(
